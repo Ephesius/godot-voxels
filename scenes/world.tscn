@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://bl4r8e5gliwv5"]
+
+[node name="World" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.6652372)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
