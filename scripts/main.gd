@@ -5,12 +5,6 @@ func _ready() -> void:
 	var chunk_manager: ChunkManager = ChunkManager.new()
 	add_child(chunk_manager)
 
-	# Generate a small grid of chunks around the origin (0, 0, 0)
-	# This will create a 5x5 grid of chunks (radius of 2 means 2 chunks in each direction)
-	# That's 5 chunks × 5 chunks = 25 chunks total
-	# Each chunk is 16 blocks, so this creates an 80x80 block area
-	chunk_manager.generate_chunks_around(Vector3i(0, 0, 0), 2)
-
 	# Create player and spawn at (0, 0) on top of terrain
 	var player: Player = Player.new()
 
@@ -21,6 +15,15 @@ func _ready() -> void:
 	# Spawn player on top of terrain (elevation + small offset)
 	player.position = Vector3(0, terrain_elevation + 1, 0)
 	add_child(player)
+
+	# Set up dynamic chunk loading
+	chunk_manager.set_player(player)
+
+	# Load initial chunks around player's spawn position
+	var player_chunk: Vector3i = ChunkManager.world_to_chunk_pos(
+		Vector3i(int(player.position.x), int(player.position.y), int(player.position.z))
+	)
+	chunk_manager.generate_chunks_around(player_chunk, chunk_manager.RENDER_DISTANCE_CHUNKS)
 
 	# Add lighting
 	var light: DirectionalLight3D = DirectionalLight3D.new()

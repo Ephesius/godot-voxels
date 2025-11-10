@@ -10,18 +10,64 @@ const WORLD_SIZE_X_CHUNKS: int = 187  # 3000 blocks ÷ 16 blocks per chunk
 const WORLD_SIZE_Z_CHUNKS: int = 187  # 3000 blocks ÷ 16 blocks per chunk
 const WORLD_SIZE_Y_CHUNKS: int = 12   # 192 blocks ÷ 16 blocks per chunk
 
-# For now, we'll just generate a small area for testing
-# Later this will be dynamic based on player position
+# Dynamic chunk loading settings
 const RENDER_DISTANCE_CHUNKS: int = 4  # How many chunks to load in each direction
+const UPDATE_INTERVAL: float = 0.5  # How often to check for chunk updates (seconds)
 
 # Climate-based terrain generation
 var climate_calculator: ClimateCalculator
 var biome_selector: BiomeSelector
 
+# Player tracking for dynamic chunk loading
+var player: Node3D = null
+var last_player_chunk: Vector3i = Vector3i(999999, 999999, 999999)  # Invalid initial position
+var time_since_last_update: float = 0.0
+
 func _ready() -> void:
 	# Initialize terrain generation systems
 	climate_calculator = ClimateCalculator.new(0)  # Use seed 0 for now
 	biome_selector = BiomeSelector.new()
+
+
+## Set the player reference for dynamic chunk loading
+func set_player(player_node: Node3D) -> void:
+	player = player_node
+
+
+## Update chunk loading based on player position
+func _process(delta: float) -> void:
+	if player == null:
+		return
+
+	time_since_last_update += delta
+
+	# Only update periodically to avoid performance issues
+	if time_since_last_update >= UPDATE_INTERVAL:
+		time_since_last_update = 0.0
+		_update_chunks_around_player()
+
+
+## Check player position and load/unload chunks accordingly
+func _update_chunks_around_player() -> void:
+	# Get player's current chunk position
+	var player_world_pos: Vector3i = Vector3i(
+		int(player.position.x),
+		int(player.position.y),
+		int(player.position.z)
+	)
+	var player_chunk: Vector3i = world_to_chunk_pos(player_world_pos)
+
+	# Only update if player has moved to a different chunk
+	if player_chunk == last_player_chunk:
+		return
+
+	last_player_chunk = player_chunk
+
+	# Load new chunks around player
+	_load_chunks_around_player(player_chunk)
+
+	# Unload chunks that are too far away
+	_unload_distant_chunks(player_chunk)
 
 # Generate a chunk at the given chunk coordinates
 # chunk_pos is in CHUNK coordinates, not block coordinates
@@ -106,6 +152,45 @@ func generate_chunks_around(center_chunk: Vector3i, radius: int = RENDER_DISTANC
 				#     continue
 
 				generate_chunk(chunk_pos)
+
+
+## Load chunks around the player's current position
+func _load_chunks_around_player(player_chunk: Vector3i) -> void:
+	# Load chunks in a radius around the player
+	for x: int in range(player_chunk.x - RENDER_DISTANCE_CHUNKS, player_chunk.x + RENDER_DISTANCE_CHUNKS + 1):
+		for z: int in range(player_chunk.z - RENDER_DISTANCE_CHUNKS, player_chunk.z + RENDER_DISTANCE_CHUNKS + 1):
+			# Generate all vertical chunks for this x,z column
+			for y: int in range(0, WORLD_SIZE_Y_CHUNKS):
+				var chunk_pos: Vector3i = Vector3i(x, y, z)
+
+				# Skip if chunk already exists
+				if chunks.has(chunk_pos):
+					continue
+
+				# Generate the chunk
+				generate_chunk(chunk_pos)
+
+
+## Unload chunks that are too far from the player
+func _unload_distant_chunks(player_chunk: Vector3i) -> void:
+	# Create a list of chunks to unload (can't modify dictionary while iterating)
+	var chunks_to_unload: Array[Vector3i] = []
+
+	# Check each loaded chunk
+	for chunk_pos: Vector3i in chunks.keys():
+		# Calculate horizontal distance (ignore y-axis for distance check)
+		var dx: int = abs(chunk_pos.x - player_chunk.x)
+		var dz: int = abs(chunk_pos.z - player_chunk.z)
+
+		# Unload if beyond render distance (with a bit of buffer to avoid thrashing)
+		var unload_distance: int = RENDER_DISTANCE_CHUNKS + 2
+		if dx > unload_distance or dz > unload_distance:
+			chunks_to_unload.append(chunk_pos)
+
+	# Unload the distant chunks
+	for chunk_pos: Vector3i in chunks_to_unload:
+		unload_chunk(chunk_pos)
+
 
 # Get a chunk at the given chunk coordinates (returns null if doesn't exist)
 func get_chunk(chunk_pos: Vector3i) -> Chunk:
