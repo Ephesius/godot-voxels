@@ -77,7 +77,7 @@ func _greedy_mesh(surface_tool: SurfaceTool, axis_u: Vector3i, axis_v: Vector3i,
 				var block_type = get_block(pos.x, pos.y, pos.z)
 				
 				# Check the neighbor in the normal direction
-				var neighbor_pos = pos * axis_n
+				var neighbor_pos = pos + axis_n
 				var neighbor_type = get_block(neighbor_pos.x, neighbor_pos.y, neighbor_pos.z)
 				
 				# Only create a face if current block is solid and neighbor is transparent
