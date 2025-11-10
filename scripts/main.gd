@@ -24,9 +24,9 @@ func _ready():
 	
 	# Position the camera to see the chunk
 	var camera = Camera3D.new()
-	camera.position = Vector3(8, -5, 30)
-	# camera.look_at_from_position(Vector3(0, 0, 0), Vector3(8, 1, 8))
+	camera.position = Vector3(25, 10, 25)
 	add_child(camera)
+	camera.look_at(Vector3(8, 1, 8))
 	
 	# Add lighting
 	var light = DirectionalLight3D.new()
