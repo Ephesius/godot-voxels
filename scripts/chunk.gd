@@ -54,32 +54,32 @@ func generate_mesh() -> void:
 					continue
 
 				var color: Color = Block.get_color(block_type)
-				var pos: Vector3 = Vector3(x, y, z)
+				var position: Vector3 = Vector3(x, y, z)
 
 				# Check each of the 6 faces
 				# Top face (+Y)
 				if Block.is_transparent(get_block(x, y + 1, z)):
-					_add_top_face(surface_tool, pos, color)
+					_add_top_face(surface_tool, position, color)
 
 				# Bottom face (-Y)
 				if Block.is_transparent(get_block(x, y - 1, z)):
-					_add_bottom_face(surface_tool, pos, color)
+					_add_bottom_face(surface_tool, position, color)
 
 				# Front face (+Z)
 				if Block.is_transparent(get_block(x, y, z + 1)):
-					_add_front_face(surface_tool, pos, color)
+					_add_front_face(surface_tool, position, color)
 
 				# Back face (-Z)
 				if Block.is_transparent(get_block(x, y, z - 1)):
-					_add_back_face(surface_tool, pos, color)
+					_add_back_face(surface_tool, position, color)
 
 				# Right face (+X)
 				if Block.is_transparent(get_block(x + 1, y, z)):
-					_add_right_face(surface_tool, pos, color)
+					_add_right_face(surface_tool, position, color)
 
 				# Left face (-X)
 				if Block.is_transparent(get_block(x - 1, y, z)):
-					_add_left_face(surface_tool, pos, color)
+					_add_left_face(surface_tool, position, color)
 
 	# Generate normals and commit
 	surface_tool.generate_normals()
@@ -93,140 +93,140 @@ func generate_mesh() -> void:
 # Helper functions to add each face (2 triangles per face)
 # All vertices are in counter-clockwise order when viewed from outside
 
-func _add_top_face(st: SurfaceTool, pos: Vector3, color: Color) -> void:
+func _add_top_face(surface_tool: SurfaceTool, position: Vector3, color: Color) -> void:
 	# Top face vertices (Y = 1)
-	var v0: Vector3 = pos + Vector3(0, 1, 0)
-	var v1: Vector3 = pos + Vector3(1, 1, 0)
-	var v2: Vector3 = pos + Vector3(1, 1, 1)
-	var v3: Vector3 = pos + Vector3(0, 1, 1)
+	var vertex_0: Vector3 = position + Vector3(0, 1, 0)
+	var vertex_1: Vector3 = position + Vector3(1, 1, 0)
+	var vertex_2: Vector3 = position + Vector3(1, 1, 1)
+	var vertex_3: Vector3 = position + Vector3(0, 1, 1)
 
 	# Triangle 1
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v1)
-	st.set_color(color)
-	st.add_vertex(v2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_1)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
 
 	# Triangle 2
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v2)
-	st.set_color(color)
-	st.add_vertex(v3)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_3)
 
-func _add_bottom_face(st: SurfaceTool, pos: Vector3, color: Color) -> void:
+func _add_bottom_face(surface_tool: SurfaceTool, position: Vector3, color: Color) -> void:
 	# Bottom face vertices (Y = 0)
-	var v0: Vector3 = pos + Vector3(0, 0, 0)
-	var v1: Vector3 = pos + Vector3(0, 0, 1)
-	var v2: Vector3 = pos + Vector3(1, 0, 1)
-	var v3: Vector3 = pos + Vector3(1, 0, 0)
+	var vertex_0: Vector3 = position + Vector3(0, 0, 0)
+	var vertex_1: Vector3 = position + Vector3(0, 0, 1)
+	var vertex_2: Vector3 = position + Vector3(1, 0, 1)
+	var vertex_3: Vector3 = position + Vector3(1, 0, 0)
 
 	# Triangle 1
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v1)
-	st.set_color(color)
-	st.add_vertex(v2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_1)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
 
 	# Triangle 2
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v2)
-	st.set_color(color)
-	st.add_vertex(v3)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_3)
 
-func _add_front_face(st: SurfaceTool, pos: Vector3, color: Color) -> void:
+func _add_front_face(surface_tool: SurfaceTool, position: Vector3, color: Color) -> void:
 	# Front face vertices (+Z)
-	var v0: Vector3 = pos + Vector3(0, 0, 1)
-	var v1: Vector3 = pos + Vector3(0, 1, 1)
-	var v2: Vector3 = pos + Vector3(1, 1, 1)
-	var v3: Vector3 = pos + Vector3(1, 0, 1)
+	var vertex_0: Vector3 = position + Vector3(0, 0, 1)
+	var vertex_1: Vector3 = position + Vector3(0, 1, 1)
+	var vertex_2: Vector3 = position + Vector3(1, 1, 1)
+	var vertex_3: Vector3 = position + Vector3(1, 0, 1)
 
 	# Triangle 1
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v1)
-	st.set_color(color)
-	st.add_vertex(v2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_1)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
 
 	# Triangle 2
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v2)
-	st.set_color(color)
-	st.add_vertex(v3)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_3)
 
-func _add_back_face(st: SurfaceTool, pos: Vector3, color: Color) -> void:
+func _add_back_face(surface_tool: SurfaceTool, position: Vector3, color: Color) -> void:
 	# Back face vertices (-Z)
-	var v0: Vector3 = pos + Vector3(0, 0, 0)
-	var v1: Vector3 = pos + Vector3(1, 0, 0)
-	var v2: Vector3 = pos + Vector3(1, 1, 0)
-	var v3: Vector3 = pos + Vector3(0, 1, 0)
+	var vertex_0: Vector3 = position + Vector3(0, 0, 0)
+	var vertex_1: Vector3 = position + Vector3(1, 0, 0)
+	var vertex_2: Vector3 = position + Vector3(1, 1, 0)
+	var vertex_3: Vector3 = position + Vector3(0, 1, 0)
 
 	# Triangle 1
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v1)
-	st.set_color(color)
-	st.add_vertex(v2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_1)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
 
 	# Triangle 2
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v2)
-	st.set_color(color)
-	st.add_vertex(v3)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_3)
 
-func _add_right_face(st: SurfaceTool, pos: Vector3, color: Color) -> void:
+func _add_right_face(surface_tool: SurfaceTool, position: Vector3, color: Color) -> void:
 	# Right face vertices (+X)
-	var v0: Vector3 = pos + Vector3(1, 0, 0)
-	var v1: Vector3 = pos + Vector3(1, 0, 1)
-	var v2: Vector3 = pos + Vector3(1, 1, 1)
-	var v3: Vector3 = pos + Vector3(1, 1, 0)
+	var vertex_0: Vector3 = position + Vector3(1, 0, 0)
+	var vertex_1: Vector3 = position + Vector3(1, 0, 1)
+	var vertex_2: Vector3 = position + Vector3(1, 1, 1)
+	var vertex_3: Vector3 = position + Vector3(1, 1, 0)
 
 	# Triangle 1
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v1)
-	st.set_color(color)
-	st.add_vertex(v2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_1)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
 
 	# Triangle 2
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v2)
-	st.set_color(color)
-	st.add_vertex(v3)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_3)
 
-func _add_left_face(st: SurfaceTool, pos: Vector3, color: Color) -> void:
+func _add_left_face(surface_tool: SurfaceTool, position: Vector3, color: Color) -> void:
 	# Left face vertices (-X)
-	var v0: Vector3 = pos + Vector3(0, 0, 0)
-	var v1: Vector3 = pos + Vector3(0, 1, 0)
-	var v2: Vector3 = pos + Vector3(0, 1, 1)
-	var v3: Vector3 = pos + Vector3(0, 0, 1)
+	var vertex_0: Vector3 = position + Vector3(0, 0, 0)
+	var vertex_1: Vector3 = position + Vector3(0, 1, 0)
+	var vertex_2: Vector3 = position + Vector3(0, 1, 1)
+	var vertex_3: Vector3 = position + Vector3(0, 0, 1)
 
 	# Triangle 1
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v1)
-	st.set_color(color)
-	st.add_vertex(v2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_1)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
 
 	# Triangle 2
-	st.set_color(color)
-	st.add_vertex(v0)
-	st.set_color(color)
-	st.add_vertex(v2)
-	st.set_color(color)
-	st.add_vertex(v3)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_0)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_2)
+	surface_tool.set_color(color)
+	surface_tool.add_vertex(vertex_3)
