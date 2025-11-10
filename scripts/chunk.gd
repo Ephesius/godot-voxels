@@ -49,9 +49,9 @@ func generate_mesh():
 	_greedy_mesh(surface_tool, Vector3i(0, 0, 1), Vector3i(0, 1, 0), Vector3i(-1, 0, 0))  # -X faces
 	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 1, 0))   # +Y faces
 	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, -1, 0))  # -Y faces
-	
-	mesh = surface_tool.commit()
+
 	surface_tool.generate_normals()
+	mesh = surface_tool.commit()
 	
 	# Create a simple material
 	var material: StandardMaterial3D = StandardMaterial3D.new()
@@ -122,7 +122,9 @@ func _greedy_mesh(surface_tool: SurfaceTool, axis_u: Vector3i, axis_v: Vector3i,
 # Add a quad (two triangles) to the mesh
 func _add_quad(surface_tool: SurfaceTool, axis_u: Vector3i, axis_v: Vector3i, axis_n: Vector3i,
 		u: int, v: int, n: int, width: int, height: int, block_type: Block.Type):
-	var offset: Vector3i = axis_n * (n + 1) # +1 to place on the outer edge
+	# For positive normals use n+1, for negative use n
+	var n_offset = n + 1 if (axis_n.x + axis_n.y + axis_n.z) > 0 else n
+	var offset: Vector3i = axis_n * n_offset
 	var corner: Vector3 = Vector3(axis_u * u + axis_v * v + offset)
 	
 	var du: Vector3 = Vector3(axis_u * width)
