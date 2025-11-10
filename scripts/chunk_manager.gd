@@ -208,8 +208,10 @@ func _load_chunks_around_player(player_chunk: Vector3i) -> void:
 			var terrain_elevation: int = climate.elevation
 
 			# Calculate Y-chunk range based on terrain elevation
-			# Load from terrain surface up to above player (for sky)
-			var min_y_chunk: int = max(0, floori(float(terrain_elevation) / Chunk.CHUNK_SIZE))
+			# Load from below terrain surface (to show cliff faces) up to above player (for sky)
+			# Subtract 2 from min to ensure we capture full terrain column including sides
+			var terrain_y_chunk: int = floori(float(terrain_elevation) / Chunk.CHUNK_SIZE)
+			var min_y_chunk: int = max(0, terrain_y_chunk - 2)
 			var max_y_chunk: int = min(WORLD_SIZE_Y_CHUNKS - 1, player_chunk.y + 2)
 
 			# Only load chunks in the relevant Y range
@@ -241,14 +243,15 @@ func _unload_distant_chunks(player_chunk: Vector3i) -> void:
 			chunks_to_unload.append(chunk_pos)
 			continue
 
-		# Also unload chunks that are below terrain or far above player
+		# Also unload chunks that are far below terrain or far above player
 		var world_x: int = chunk_pos.x * Chunk.CHUNK_SIZE
 		var world_z: int = chunk_pos.z * Chunk.CHUNK_SIZE
 		var climate: Dictionary = climate_calculator.get_climate_at(world_x, world_z)
 		var terrain_elevation: int = climate.elevation
-		var min_y_chunk: int = floori(float(terrain_elevation) / Chunk.CHUNK_SIZE)
+		var terrain_y_chunk: int = floori(float(terrain_elevation) / Chunk.CHUNK_SIZE)
+		var min_y_chunk: int = max(0, terrain_y_chunk - 2)
 
-		# Unload if chunk is below terrain or too far above player
+		# Unload if chunk is well below terrain or too far above player
 		if chunk_pos.y < min_y_chunk or chunk_pos.y > player_chunk.y + 3:
 			chunks_to_unload.append(chunk_pos)
 
