@@ -14,18 +14,18 @@ func _ready():
 			chunk.set_block(x, 2, z, Block.Type.GRASS)
 	
 	# Add some variation
-	for i in range(5):
-		var x = randi() % 16
-		var z = randi() % 16
-		chunk.set_block(x, 3, z, Block.Type.STONE)
+	#for i in range(5):
+		#var x = randi() % 16
+		#var z = randi() % 16
+		#chunk.set_block(x, 3, z, Block.Type.STONE)
 	
 	# Generate the mesh
 	chunk.generate_mesh()
 	
 	# Position the camera to see the chunk
 	var camera = Camera3D.new()
-	camera.position = Vector3(8, 20, 25)
-	camera.look_at_from_position(Vector3(8, 20, 25), Vector3(8, 2, 8))
+	camera.position = Vector3(8, -5, 30)
+	# camera.look_at_from_position(Vector3(0, 0, 0), Vector3(8, 1, 8))
 	add_child(camera)
 	
 	# Add lighting
