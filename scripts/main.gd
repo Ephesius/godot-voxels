@@ -11,13 +11,11 @@ func _ready() -> void:
 	# Each chunk is 16 blocks, so this creates an 80x80 block area
 	chunk_manager.generate_chunks_around(Vector3i(0, 0, 0), 2)
 
-	# Position the camera to see multiple chunks
-	# We're now looking at a larger area, so move the camera back and up
-	var camera: Camera3D = Camera3D.new()
-	camera.position = Vector3(40, 30, 40)  # Higher and further back to see more chunks
+	# Create flying camera for player control
+	var camera: FlyingCamera = FlyingCamera.new()
+	camera.position = Vector3(0, 10, 20)  # Start above the terrain, looking toward center
+	camera.rotation_degrees = Vector3(-20, 0, 0)  # Angle down slightly
 	add_child(camera)
-	camera.current = true
-	camera.look_at(Vector3(0, 2, 0))  # Look at the center of our chunk grid
 
 	# Add lighting
 	var light: DirectionalLight3D = DirectionalLight3D.new()
