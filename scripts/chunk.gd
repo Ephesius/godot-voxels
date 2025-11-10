@@ -42,12 +42,16 @@ func generate_mesh():
 	var surface_tool = SurfaceTool.new()
 	surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	
-	# Process each axis for greedy meshing
-	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, 0, 1)) # X-axis faces
-	_greedy_mesh(surface_tool, Vector3i(0, 1, 0), Vector3i(0, 0, 1), Vector3i(1, 0, 0)) # Y-axis faces
-	_greedy_mesh(surface_tool, Vector3i(0, 0, 1), Vector3i(1, 0, 0), Vector3i(0, 1, 0)) # Z-axis faces
+	# Process each axis for greedy meshing (both positive and negative directions)
+	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, 0, 1))   # +Z faces
+	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, 0, -1))  # -Z faces
+	_greedy_mesh(surface_tool, Vector3i(0, 0, 1), Vector3i(0, 1, 0), Vector3i(1, 0, 0))   # +X faces
+	_greedy_mesh(surface_tool, Vector3i(0, 0, 1), Vector3i(0, 1, 0), Vector3i(-1, 0, 0))  # -X faces
+	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 1, 0))   # +Y faces
+	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, -1, 0))  # -Y faces
 	
 	mesh = surface_tool.commit()
+	surface_tool.generate_normals()
 	
 	# Create a simple material
 	var material: StandardMaterial3D = StandardMaterial3D.new()
