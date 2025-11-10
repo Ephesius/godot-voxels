@@ -13,7 +13,7 @@ func _ready() -> void:
 
 	# Create flying camera for player control
 	var camera: FlyingCamera = FlyingCamera.new()
-	camera.position = Vector3(0, 10, 20)  # Start above the terrain, looking toward center
+	camera.position = Vector3(0, 80, 20)  # Start above sea level (y=64), looking toward center
 	camera.rotation_degrees = Vector3(-20, 0, 0)  # Angle down slightly
 	add_child(camera)
 
