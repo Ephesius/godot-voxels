@@ -25,9 +25,21 @@ func _ready() -> void:
 		Vector3i(int(player.position.x), int(player.position.y), int(player.position.z))
 	)
 	# Only generate a 3x3 area immediately (small enough to be fast)
+	# Use smart Y-level culling to only load relevant vertical chunks
 	for x in range(player_chunk.x - 1, player_chunk.x + 2):
 		for z in range(player_chunk.z - 1, player_chunk.z + 2):
-			for y in range(0, chunk_manager.WORLD_SIZE_Y_CHUNKS):
+			# Get terrain elevation for this column
+			var world_x: int = x * 16  # Chunk.CHUNK_SIZE
+			var world_z: int = z * 16
+			var climate: Dictionary = chunk_manager.climate_calculator.get_climate_at(world_x, world_z)
+			var terrain_elevation: int = climate.elevation
+
+			# Calculate Y-chunk range based on terrain elevation
+			var min_y_chunk: int = max(0, int(floor(float(terrain_elevation) / 16.0)))
+			var max_y_chunk: int = min(chunk_manager.WORLD_SIZE_Y_CHUNKS - 1, player_chunk.y + 2)
+
+			# Only generate chunks in relevant Y range
+			for y in range(min_y_chunk, max_y_chunk + 1):
 				chunk_manager.generate_chunk(Vector3i(x, y, z))
 
 	# Add lighting
