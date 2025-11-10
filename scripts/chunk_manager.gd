@@ -6,15 +6,15 @@ var chunks: Dictionary = {}
 
 # World dimensions in chunks (not blocks!)
 # Your world is 3000x3000x192 blocks, which is 187x187x12 chunks (3000÷16 = 187.5, rounded down)
-const WORLD_SIZE_X_CHUNKS = 187  # 3000 blocks ÷ 16 blocks per chunk
-const WORLD_SIZE_Z_CHUNKS = 187  # 3000 blocks ÷ 16 blocks per chunk
-const WORLD_SIZE_Y_CHUNKS = 12   # 192 blocks ÷ 16 blocks per chunk
+const WORLD_SIZE_X_CHUNKS: int = 187  # 3000 blocks ÷ 16 blocks per chunk
+const WORLD_SIZE_Z_CHUNKS: int = 187  # 3000 blocks ÷ 16 blocks per chunk
+const WORLD_SIZE_Y_CHUNKS: int = 12   # 192 blocks ÷ 16 blocks per chunk
 
 # For now, we'll just generate a small area for testing
 # Later this will be dynamic based on player position
-const RENDER_DISTANCE_CHUNKS = 4  # How many chunks to load in each direction
+const RENDER_DISTANCE_CHUNKS: int = 4  # How many chunks to load in each direction
 
-func _ready():
+func _ready() -> void:
 	pass
 
 # Generate a chunk at the given chunk coordinates
@@ -26,7 +26,7 @@ func generate_chunk(chunk_pos: Vector3i) -> Chunk:
 		return chunks[chunk_pos]
 
 	# Create new chunk
-	var chunk = Chunk.new(chunk_pos)
+	var chunk: Chunk = Chunk.new(chunk_pos)
 
 	# Position the chunk in world space
 	# Each chunk is 16 blocks, so chunk (1,0,0) should be at world position (16,0,0)
@@ -52,13 +52,13 @@ func generate_chunk(chunk_pos: Vector3i) -> Chunk:
 
 # Temporary function to generate test terrain
 # This creates a simple flat platform so we can see multiple chunks
-func _generate_test_terrain(chunk: Chunk, chunk_pos: Vector3i):
+func _generate_test_terrain(chunk: Chunk, chunk_pos: Vector3i) -> void:
 	# Create a simple ground layer
 	# We'll make layers at y=0 (stone), y=1 (dirt), y=2 (grass)
 	# Only generate terrain in the bottom chunks (y=0)
 	if chunk_pos.y == 0:
-		for x in range(Chunk.CHUNK_SIZE):
-			for z in range(Chunk.CHUNK_SIZE):
+		for x: int in range(Chunk.CHUNK_SIZE):
+			for z: int in range(Chunk.CHUNK_SIZE):
 				chunk.set_block(x, 0, z, Block.Type.STONE)
 				chunk.set_block(x, 1, z, Block.Type.DIRT)
 				chunk.set_block(x, 2, z, Block.Type.GRASS)
@@ -67,12 +67,12 @@ func _generate_test_terrain(chunk: Chunk, chunk_pos: Vector3i):
 # This is what you'd call when the player moves or when the world first loads
 # radius = number of chunks in each direction from center (inclusive)
 # Example: radius=2 around (0,0,0) generates chunks from (-2,-2) to (2,2) = 5×5 = 25 chunks
-func generate_chunks_around(center_chunk: Vector3i, radius: int = RENDER_DISTANCE_CHUNKS):
-	for x in range(center_chunk.x - radius, center_chunk.x + radius + 1):
-		for z in range(center_chunk.z - radius, center_chunk.z + radius + 1):
+func generate_chunks_around(center_chunk: Vector3i, radius: int = RENDER_DISTANCE_CHUNKS) -> void:
+	for x: int in range(center_chunk.x - radius, center_chunk.x + radius + 1):
+		for z: int in range(center_chunk.z - radius, center_chunk.z + radius + 1):
 			# For now, only generate ground level chunks (y = 0)
 			# Later we'll expand this to handle vertical chunks too
-			var chunk_pos = Vector3i(x, 0, z)
+			var chunk_pos: Vector3i = Vector3i(x, 0, z)
 
 			# Optional: Check world bounds if you want a limited world size
 			# For now, we'll allow negative coordinates (chunks west/north of origin)
@@ -87,15 +87,15 @@ func get_chunk(chunk_pos: Vector3i) -> Chunk:
 	return chunks.get(chunk_pos, null)
 
 # Unload a chunk (for later when we implement chunk loading/unloading based on distance)
-func unload_chunk(chunk_pos: Vector3i):
+func unload_chunk(chunk_pos: Vector3i) -> void:
 	if chunks.has(chunk_pos):
-		var chunk = chunks[chunk_pos]
+		var chunk: Chunk = chunks[chunk_pos]
 		chunks.erase(chunk_pos)
 		chunk.queue_free()
 
 # Clear all chunks (useful for regenerating the world)
-func clear_all_chunks():
-	for chunk in chunks.values():
+func clear_all_chunks() -> void:
+	for chunk: Chunk in chunks.values():
 		chunk.queue_free()
 	chunks.clear()
 
