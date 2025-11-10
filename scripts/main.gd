@@ -31,11 +31,11 @@ func _ready() -> void:
 			# Get terrain elevation for this column
 			var world_x: int = x * 16  # Chunk.CHUNK_SIZE
 			var world_z: int = z * 16
-			var climate: Dictionary = chunk_manager.climate_calculator.get_climate_at(world_x, world_z)
-			var terrain_elevation: int = climate.elevation
+			var column_climate: Dictionary = chunk_manager.climate_calculator.get_climate_at(world_x, world_z)
+			var column_elevation: int = column_climate.elevation
 
 			# Calculate Y-chunk range based on terrain elevation
-			var min_y_chunk: int = max(0, int(floor(float(terrain_elevation) / 16.0)))
+			var min_y_chunk: int = max(0, int(floor(float(column_elevation) / 16.0)))
 			var max_y_chunk: int = min(chunk_manager.WORLD_SIZE_Y_CHUNKS - 1, player_chunk.y + 2)
 
 			# Only generate chunks in relevant Y range
