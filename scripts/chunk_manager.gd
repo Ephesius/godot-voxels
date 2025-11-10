@@ -55,29 +55,30 @@ func generate_chunk(chunk_pos: Vector3i) -> Chunk:
 func _generate_test_terrain(chunk: Chunk, chunk_pos: Vector3i):
 	# Create a simple ground layer
 	# We'll make layers at y=0 (stone), y=1 (dirt), y=2 (grass)
-	for x in range(Chunk.CHUNK_SIZE):
-		for z in range(Chunk.CHUNK_SIZE):
-			# Calculate the absolute world Y position for this chunk
-			var world_y_base = chunk_pos.y * Chunk.CHUNK_SIZE
-
-			# Only generate terrain in the bottom chunks (y=0)
-			if chunk_pos.y == 0:
+	# Only generate terrain in the bottom chunks (y=0)
+	if chunk_pos.y == 0:
+		for x in range(Chunk.CHUNK_SIZE):
+			for z in range(Chunk.CHUNK_SIZE):
 				chunk.set_block(x, 0, z, Block.Type.STONE)
 				chunk.set_block(x, 1, z, Block.Type.DIRT)
 				chunk.set_block(x, 2, z, Block.Type.GRASS)
 
 # Generate chunks in a square area around a center point
 # This is what you'd call when the player moves or when the world first loads
+# radius = number of chunks in each direction from center (inclusive)
+# Example: radius=2 around (0,0,0) generates chunks from (-2,-2) to (2,2) = 5×5 = 25 chunks
 func generate_chunks_around(center_chunk: Vector3i, radius: int = RENDER_DISTANCE_CHUNKS):
-	for x in range(center_chunk.x - radius, center_chunk.x + radius):
-		for z in range(center_chunk.z - radius, center_chunk.z + radius):
+	for x in range(center_chunk.x - radius, center_chunk.x + radius + 1):
+		for z in range(center_chunk.z - radius, center_chunk.z + radius + 1):
 			# For now, only generate ground level chunks (y = 0)
 			# Later we'll expand this to handle vertical chunks too
 			var chunk_pos = Vector3i(x, 0, z)
 
-			# Check world bounds (optional - remove if you want infinite terrain)
-			if x < 0 or x >= WORLD_SIZE_X_CHUNKS or z < 0 or z >= WORLD_SIZE_Z_CHUNKS:
-				continue
+			# Optional: Check world bounds if you want a limited world size
+			# For now, we'll allow negative coordinates (chunks west/north of origin)
+			# Uncomment these lines if you want to enforce world boundaries:
+			# if x < 0 or x >= WORLD_SIZE_X_CHUNKS or z < 0 or z >= WORLD_SIZE_Z_CHUNKS:
+			#     continue
 
 			generate_chunk(chunk_pos)
 
