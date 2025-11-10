@@ -19,11 +19,16 @@ func _ready() -> void:
 	# Set up dynamic chunk loading
 	chunk_manager.set_player(player)
 
-	# Load initial chunks around player's spawn position
+	# Generate immediate chunks around spawn (limited area to avoid freeze)
+	# This ensures player has ground to stand on while rest loads via queue
 	var player_chunk: Vector3i = ChunkManager.world_to_chunk_pos(
 		Vector3i(int(player.position.x), int(player.position.y), int(player.position.z))
 	)
-	chunk_manager.generate_chunks_around(player_chunk, chunk_manager.RENDER_DISTANCE_CHUNKS)
+	# Only generate a 3x3 area immediately (small enough to be fast)
+	for x in range(player_chunk.x - 1, player_chunk.x + 2):
+		for z in range(player_chunk.z - 1, player_chunk.z + 2):
+			for y in range(0, chunk_manager.WORLD_SIZE_Y_CHUNKS):
+				chunk_manager.generate_chunk(Vector3i(x, y, z))
 
 	# Add lighting
 	var light: DirectionalLight3D = DirectionalLight3D.new()
