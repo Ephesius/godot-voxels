@@ -14,6 +14,7 @@ const WORLD_SIZE_Y_CHUNKS: int = 12   # 192 blocks ÷ 16 blocks per chunk
 const RENDER_DISTANCE_CHUNKS: int = 4  # How many chunks to load in each direction
 const UPDATE_INTERVAL: float = 0.5  # How often to check for chunk updates (seconds)
 const MAX_CHUNKS_PER_FRAME: int = 5  # Maximum chunks to generate per frame to avoid stuttering
+const COLLISION_RADIUS: int = 1  # Only generate collision within this many chunks of player
 
 # Climate-based terrain generation
 var climate_calculator: ClimateCalculator
@@ -45,6 +46,9 @@ func _process(delta: float) -> void:
 
 	# Process chunk generation queue every frame (limited chunks per frame)
 	_process_chunk_queue()
+
+	# Update collision every frame (very fast - just adds/removes collision bodies)
+	_update_collision_around_player()
 
 	time_since_last_update += delta
 
@@ -258,6 +262,36 @@ func _unload_distant_chunks(player_chunk: Vector3i) -> void:
 	# Unload the distant chunks
 	for chunk_pos: Vector3i in chunks_to_unload:
 		unload_chunk(chunk_pos)
+
+
+## Update collision for chunks based on player distance
+func _update_collision_around_player() -> void:
+	# Get player's current chunk position
+	var player_world_pos: Vector3i = Vector3i(
+		int(player.position.x),
+		int(player.position.y),
+		int(player.position.z)
+	)
+	var player_chunk: Vector3i = world_to_chunk_pos(player_world_pos)
+
+	# Check all loaded chunks
+	for chunk_pos: Vector3i in chunks.keys():
+		var chunk: Chunk = chunks[chunk_pos]
+
+		# Calculate distance to player (using Chebyshev distance / max of differences)
+		var dx: int = abs(chunk_pos.x - player_chunk.x)
+		var dy: int = abs(chunk_pos.y - player_chunk.y)
+		var dz: int = abs(chunk_pos.z - player_chunk.z)
+		var distance: int = max(dx, max(dy, dz))
+
+		# Add collision if within radius and doesn't have it
+		if distance <= COLLISION_RADIUS:
+			if not chunk.has_collision:
+				chunk.add_collision()
+		# Remove collision if beyond radius and has it
+		else:
+			if chunk.has_collision:
+				chunk.remove_collision()
 
 
 # Get a chunk at the given chunk coordinates (returns null if doesn't exist)

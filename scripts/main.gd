@@ -42,7 +42,9 @@ func _ready() -> void:
 
 			# Only generate chunks in relevant Y range
 			for y in range(min_y_chunk, max_y_chunk + 1):
-				chunk_manager.generate_chunk(Vector3i(x, y, z))
+				var chunk: Chunk = chunk_manager.generate_chunk(Vector3i(x, y, z))
+				# Add collision to spawn chunks immediately so player doesn't fall
+				chunk.add_collision()
 
 	# Add lighting
 	var light: DirectionalLight3D = DirectionalLight3D.new()
