@@ -59,7 +59,7 @@ func _process(delta: float) -> void:
 
 	# Calculate movement direction relative to camera orientation
 	# Forward/backward movement (W/S)
-	var forward: Vector3 = -global_transform.basis.z * input_dir.y
+	var forward: Vector3 = global_transform.basis.z * input_dir.y
 	# Left/right movement (A/D)
 	var right: Vector3 = global_transform.basis.x * input_dir.x
 
@@ -68,7 +68,7 @@ func _process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_SPACE):
 		vertical = Vector3.UP
 	# Note: We already use Ctrl for slow mode, so let's use E for down
-	if Input.is_key_pressed(KEY_E):
+	if Input.is_key_pressed(KEY_C):
 		vertical = Vector3.DOWN
 
 	# Combine all movement directions
