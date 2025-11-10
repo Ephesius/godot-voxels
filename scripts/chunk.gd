@@ -85,10 +85,11 @@ func generate_mesh() -> void:
 	surface_tool.generate_normals()
 	mesh = surface_tool.commit()
 
-	# Create material
-	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.vertex_color_use_as_albedo = true
-	set_surface_override_material(0, material)
+	# Only set material if mesh has surfaces (i.e., chunk is not empty)
+	if mesh and mesh.get_surface_count() > 0:
+		var material: StandardMaterial3D = StandardMaterial3D.new()
+		material.vertex_color_use_as_albedo = true
+		set_surface_override_material(0, material)
 
 # Helper functions to add each face (2 triangles per face)
 # All vertices are in counter-clockwise order when viewed from outside
