@@ -249,8 +249,11 @@ func _add_chunk_to_scene(chunk_data: Dictionary) -> void:
 	# Create chunk node
 	var chunk: Chunk = Chunk.new(chunk_pos)
 
-	# Set block data
-	chunk.blocks = block_data
+	# Copy block data (can't directly assign due to type constraints)
+	for x in range(Chunk.CHUNK_SIZE):
+		for y in range(Chunk.CHUNK_SIZE):
+			for z in range(Chunk.CHUNK_SIZE):
+				chunk.blocks[x][y][z] = block_data[x][y][z]
 
 	# Position the chunk in world space
 	chunk.position = Vector3(
