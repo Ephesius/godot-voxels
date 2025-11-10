@@ -1,4 +1,5 @@
-class_name Chunk extends MeshInstance3D
+class_name Chunk
+extends MeshInstance3D
 
 const CHUNK_SIZE = 16
 
@@ -37,131 +38,195 @@ func set_block(x: int, y: int, z: int, type: Block.Type) -> void:
 		return
 	blocks[x][y][z] = type
 
-# Generate the mesh using greedy meshing algorithm
+# Generate the mesh using simple face culling (like Minecraft)
 func generate_mesh():
 	var surface_tool = SurfaceTool.new()
 	surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	
-	# Process each axis for greedy meshing (both positive and negative directions)
-	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, 0, 1))   # +Z faces
-	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, 0, -1))  # -Z faces
-	_greedy_mesh(surface_tool, Vector3i(0, 0, 1), Vector3i(0, 1, 0), Vector3i(1, 0, 0))   # +X faces
-	_greedy_mesh(surface_tool, Vector3i(0, 0, 1), Vector3i(0, 1, 0), Vector3i(-1, 0, 0))  # -X faces
-	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, 1, 0))   # +Y faces
-	_greedy_mesh(surface_tool, Vector3i(1, 0, 0), Vector3i(0, 0, 1), Vector3i(0, -1, 0))  # -Y faces
 
+	# Loop through every block
+	for x in range(CHUNK_SIZE):
+		for y in range(CHUNK_SIZE):
+			for z in range(CHUNK_SIZE):
+				var block_type = blocks[x][y][z]
+
+				# Skip air blocks
+				if not Block.is_solid(block_type):
+					continue
+
+				var color = Block.get_color(block_type)
+				var pos = Vector3(x, y, z)
+
+				# Check each of the 6 faces
+				# Top face (+Y)
+				if Block.is_transparent(get_block(x, y + 1, z)):
+					_add_top_face(surface_tool, pos, color)
+
+				# Bottom face (-Y)
+				if Block.is_transparent(get_block(x, y - 1, z)):
+					_add_bottom_face(surface_tool, pos, color)
+
+				# Front face (+Z)
+				if Block.is_transparent(get_block(x, y, z + 1)):
+					_add_front_face(surface_tool, pos, color)
+
+				# Back face (-Z)
+				if Block.is_transparent(get_block(x, y, z - 1)):
+					_add_back_face(surface_tool, pos, color)
+
+				# Right face (+X)
+				if Block.is_transparent(get_block(x + 1, y, z)):
+					_add_right_face(surface_tool, pos, color)
+
+				# Left face (-X)
+				if Block.is_transparent(get_block(x - 1, y, z)):
+					_add_left_face(surface_tool, pos, color)
+
+	# Generate normals and commit
 	surface_tool.generate_normals()
 	mesh = surface_tool.commit()
-	
-	# Create a simple material
-	var material: StandardMaterial3D = StandardMaterial3D.new()
+
+	# Create material
+	var material = StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
 	set_surface_override_material(0, material)
 
-# Greedy meshing algorithm
-# axis_u and axis_v define the plane we're meshing, axis_n is the normal direction
-func _greedy_mesh(surface_tool: SurfaceTool, axis_u: Vector3i, axis_v: Vector3i, axis_n: Vector3i):
-	var u_dim = CHUNK_SIZE
-	var v_dim = CHUNK_SIZE
-	var n_dim = CHUNK_SIZE
-	
-	# For each slice along the normal axis
-	for n in range(n_dim):
-		# Create a mask for this slice
-		var mask: Array = []
-		for u in range(u_dim):
-			mask.append([])
-			for v in range(v_dim):
-				mask[u].append(null)
-		
-		# Fill the mask by comparing adjacent blocks
-		for u in range(u_dim):
-			for v in range(v_dim):
-				var pos = axis_u * u + axis_v * v + axis_n * n
-				var block_type = get_block(pos.x, pos.y, pos.z)
-				
-				# Check the neighbor in the normal direction
-				var neighbor_pos = pos + axis_n
-				var neighbor_type = get_block(neighbor_pos.x, neighbor_pos.y, neighbor_pos.z)
-				
-				# Only create a face if current block is solid and neighbor is transparent
-				if Block.is_solid(block_type) and Block.is_transparent(neighbor_type):
-					mask[u][v] = block_type
-				else:
-					mask[u][v] = null
-		# Generate mesh from the mask using greedy algorithm
-		for u in range(u_dim):
-			for v in range(v_dim):
-				if mask[u][v] != null:
-					var block_type = mask[u][v]
-					
-					# Compute width (along u axis)
-					var width = 1
-					while u + width < u_dim and mask[u + width][v] == block_type:
-						width += 1
-					
-					# Compute height (along v axis)
-					var height = 1
-					var done = false
-					while v + height < v_dim and not done:
-						for du in range(width):
-							if mask[u + du][v + height] != block_type:
-								done = true
-								break
-						if not done:
-							height += 1
-					
-					# Create the quad
-					_add_quad(surface_tool, axis_u, axis_v, axis_n, u, v, n, width, height, block_type)
-					
-					# Clear the mask for the processed area
-					for du in range(width):
-						for dv in range(height):
-							mask[u + du][v + dv] = null
+# Helper functions to add each face (2 triangles per face)
+# All vertices are in counter-clockwise order when viewed from outside
 
-# Add a quad (two triangles) to the mesh
-func _add_quad(surface_tool: SurfaceTool, axis_u: Vector3i, axis_v: Vector3i, axis_n: Vector3i,
-		u: int, v: int, n: int, width: int, height: int, block_type: Block.Type):
-	# For positive normals use n+1, for negative use n
-	var n_offset = n + 1 if (axis_n.x + axis_n.y + axis_n.z) > 0 else n
-	var offset: Vector3i = axis_n * n_offset
-	var corner: Vector3 = Vector3(axis_u * u + axis_v * v + offset)
-	
-	var du: Vector3 = Vector3(axis_u * width)
-	var dv: Vector3 = Vector3(axis_v * height)
-	
-	var color = Block.get_color(block_type)
-	
-	# Determine if we need to flip the quad based on normal direction
-	var flip: bool = (axis_n.x + axis_n.y + axis_n.z) > 0
-	
-	if flip:
-		# Counter-clockwise winding
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner + du)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner + du + dv)
-		
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner + du + dv)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner + dv)
-	else:
-		# Clockwise winding (flipped)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner + dv)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner + du + dv)
-		
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner + du + dv)
-		surface_tool.set_color(color)
-		surface_tool.add_vertex(corner + du)
+func _add_top_face(st: SurfaceTool, pos: Vector3, color: Color):
+	# Top face vertices (Y = 1)
+	var v0 = pos + Vector3(0, 1, 0)
+	var v1 = pos + Vector3(1, 1, 0)
+	var v2 = pos + Vector3(1, 1, 1)
+	var v3 = pos + Vector3(0, 1, 1)
+
+	# Triangle 1
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v1)
+	st.set_color(color)
+	st.add_vertex(v2)
+
+	# Triangle 2
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v2)
+	st.set_color(color)
+	st.add_vertex(v3)
+
+func _add_bottom_face(st: SurfaceTool, pos: Vector3, color: Color):
+	# Bottom face vertices (Y = 0)
+	var v0 = pos + Vector3(0, 0, 0)
+	var v1 = pos + Vector3(0, 0, 1)
+	var v2 = pos + Vector3(1, 0, 1)
+	var v3 = pos + Vector3(1, 0, 0)
+
+	# Triangle 1
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v1)
+	st.set_color(color)
+	st.add_vertex(v2)
+
+	# Triangle 2
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v2)
+	st.set_color(color)
+	st.add_vertex(v3)
+
+func _add_front_face(st: SurfaceTool, pos: Vector3, color: Color):
+	# Front face vertices (+Z)
+	var v0 = pos + Vector3(0, 0, 1)
+	var v1 = pos + Vector3(0, 1, 1)
+	var v2 = pos + Vector3(1, 1, 1)
+	var v3 = pos + Vector3(1, 0, 1)
+
+	# Triangle 1
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v1)
+	st.set_color(color)
+	st.add_vertex(v2)
+
+	# Triangle 2
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v2)
+	st.set_color(color)
+	st.add_vertex(v3)
+
+func _add_back_face(st: SurfaceTool, pos: Vector3, color: Color):
+	# Back face vertices (-Z)
+	var v0 = pos + Vector3(0, 0, 0)
+	var v1 = pos + Vector3(1, 0, 0)
+	var v2 = pos + Vector3(1, 1, 0)
+	var v3 = pos + Vector3(0, 1, 0)
+
+	# Triangle 1
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v1)
+	st.set_color(color)
+	st.add_vertex(v2)
+
+	# Triangle 2
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v2)
+	st.set_color(color)
+	st.add_vertex(v3)
+
+func _add_right_face(st: SurfaceTool, pos: Vector3, color: Color):
+	# Right face vertices (+X)
+	var v0 = pos + Vector3(1, 0, 0)
+	var v1 = pos + Vector3(1, 0, 1)
+	var v2 = pos + Vector3(1, 1, 1)
+	var v3 = pos + Vector3(1, 1, 0)
+
+	# Triangle 1
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v1)
+	st.set_color(color)
+	st.add_vertex(v2)
+
+	# Triangle 2
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v2)
+	st.set_color(color)
+	st.add_vertex(v3)
+
+func _add_left_face(st: SurfaceTool, pos: Vector3, color: Color):
+	# Left face vertices (-X)
+	var v0 = pos + Vector3(0, 0, 0)
+	var v1 = pos + Vector3(0, 1, 0)
+	var v2 = pos + Vector3(0, 1, 1)
+	var v3 = pos + Vector3(0, 0, 1)
+
+	# Triangle 1
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v1)
+	st.set_color(color)
+	st.add_vertex(v2)
+
+	# Triangle 2
+	st.set_color(color)
+	st.add_vertex(v0)
+	st.set_color(color)
+	st.add_vertex(v2)
+	st.set_color(color)
+	st.add_vertex(v3)
