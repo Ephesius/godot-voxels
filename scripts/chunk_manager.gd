@@ -198,11 +198,22 @@ func generate_chunks_around(center_chunk: Vector3i, radius: int = RENDER_DISTANC
 
 ## Load chunks around the player's current position
 func _load_chunks_around_player(player_chunk: Vector3i) -> void:
-	# Load chunks in a radius around the player
+	# Load chunks in a radius around the player (with smart Y-level culling)
 	for x: int in range(player_chunk.x - RENDER_DISTANCE_CHUNKS, player_chunk.x + RENDER_DISTANCE_CHUNKS + 1):
 		for z: int in range(player_chunk.z - RENDER_DISTANCE_CHUNKS, player_chunk.z + RENDER_DISTANCE_CHUNKS + 1):
-			# Generate all vertical chunks for this x,z column
-			for y: int in range(0, WORLD_SIZE_Y_CHUNKS):
+			# Get terrain elevation for this x,z column
+			var world_x: int = x * Chunk.CHUNK_SIZE
+			var world_z: int = z * Chunk.CHUNK_SIZE
+			var climate: Dictionary = climate_calculator.get_climate_at(world_x, world_z)
+			var terrain_elevation: int = climate.elevation
+
+			# Calculate Y-chunk range based on terrain elevation
+			# Load from terrain surface up to above player (for sky)
+			var min_y_chunk: int = max(0, floori(float(terrain_elevation) / Chunk.CHUNK_SIZE))
+			var max_y_chunk: int = min(WORLD_SIZE_Y_CHUNKS - 1, player_chunk.y + 2)
+
+			# Only load chunks in the relevant Y range
+			for y: int in range(min_y_chunk, max_y_chunk + 1):
 				var chunk_pos: Vector3i = Vector3i(x, y, z)
 
 				# Skip if chunk already exists or is already queued
@@ -220,13 +231,25 @@ func _unload_distant_chunks(player_chunk: Vector3i) -> void:
 
 	# Check each loaded chunk
 	for chunk_pos: Vector3i in chunks.keys():
-		# Calculate horizontal distance (ignore y-axis for distance check)
+		# Calculate horizontal distance
 		var dx: int = abs(chunk_pos.x - player_chunk.x)
 		var dz: int = abs(chunk_pos.z - player_chunk.z)
 
-		# Unload if beyond render distance (with a bit of buffer to avoid thrashing)
+		# Unload if beyond render distance (with buffer to avoid thrashing)
 		var unload_distance: int = RENDER_DISTANCE_CHUNKS + 2
 		if dx > unload_distance or dz > unload_distance:
+			chunks_to_unload.append(chunk_pos)
+			continue
+
+		# Also unload chunks that are below terrain or far above player
+		var world_x: int = chunk_pos.x * Chunk.CHUNK_SIZE
+		var world_z: int = chunk_pos.z * Chunk.CHUNK_SIZE
+		var climate: Dictionary = climate_calculator.get_climate_at(world_x, world_z)
+		var terrain_elevation: int = climate.elevation
+		var min_y_chunk: int = floori(float(terrain_elevation) / Chunk.CHUNK_SIZE)
+
+		# Unload if chunk is below terrain or too far above player
+		if chunk_pos.y < min_y_chunk or chunk_pos.y > player_chunk.y + 3:
 			chunks_to_unload.append(chunk_pos)
 
 	# Unload the distant chunks
