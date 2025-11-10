@@ -16,22 +16,12 @@ func _ready():
 	# Generate the mesh
 	chunk.generate_mesh()
 	
-	# DEBUG: Print mesh info
-	print("Chunk mesh: ", chunk.mesh)
-	if chunk.mesh:
-		print("Vertex count: ", chunk.mesh.get_faces())
-		print("Surface count: ", chunk.mesh.get_surface_count())
-	print("Chunk position: ", chunk.position)
-	print("Chunk visible: ", chunk.visible)
-	
 	# Position the camera to see the chunk
 	var camera = Camera3D.new()
 	camera.position = Vector3(25, 10, 25)
 	add_child(camera)
 	camera.current = true
 	camera.look_at(Vector3(8, 1, 8))
-	print("Camera position: ", camera.position)
-	print("Camera looking at: ", -camera.global_transform.basis.z)
 	
 	# Add lighting
 	var light = DirectionalLight3D.new()
