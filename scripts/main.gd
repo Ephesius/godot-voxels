@@ -11,11 +11,16 @@ func _ready() -> void:
 	# Each chunk is 16 blocks, so this creates an 80x80 block area
 	chunk_manager.generate_chunks_around(Vector3i(0, 0, 0), 2)
 
-	# Create flying camera for player control
-	var camera: FlyingCamera = FlyingCamera.new()
-	camera.position = Vector3(0, 80, 20)  # Start above sea level (y=64), looking toward center
-	camera.rotation_degrees = Vector3(-20, 0, 0)  # Angle down slightly
-	add_child(camera)
+	# Create player and spawn at (0, 0) on top of terrain
+	var player: Player = Player.new()
+
+	# Get terrain elevation at spawn point (0, 0) using the climate calculator
+	var spawn_climate: Dictionary = chunk_manager.climate_calculator.get_climate_at(0, 0)
+	var terrain_elevation: int = spawn_climate.elevation
+
+	# Spawn player on top of terrain (elevation + small offset)
+	player.position = Vector3(0, terrain_elevation + 1, 0)
+	add_child(player)
 
 	# Add lighting
 	var light: DirectionalLight3D = DirectionalLight3D.new()
