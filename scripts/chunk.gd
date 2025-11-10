@@ -90,6 +90,26 @@ func generate_mesh() -> void:
 		material.vertex_color_use_as_albedo = true
 		set_surface_override_material(0, material)
 
+		# Generate collision for the chunk
+		_generate_collision()
+
+
+## Generate collision shape from the mesh
+func _generate_collision() -> void:
+	# Create a StaticBody3D for collision
+	var static_body: StaticBody3D = StaticBody3D.new()
+
+	# Create collision shape from the mesh
+	var collision_shape: CollisionShape3D = CollisionShape3D.new()
+	collision_shape.shape = mesh.create_trimesh_shape()
+
+	# Add collision shape to static body
+	static_body.add_child(collision_shape)
+
+	# Add static body to chunk
+	add_child(static_body)
+
+
 # Helper functions to add each face (2 triangles per face)
 # All vertices are in counter-clockwise order when viewed from outside
 
