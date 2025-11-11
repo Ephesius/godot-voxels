@@ -129,7 +129,7 @@ func _calculate_elevation(world_x: int, world_z: int, base_temp: float) -> int:
 func _adjust_temperature_for_elevation(base_temp: float, elevation: int) -> float:
 	# Calculate how far above sea level we are (normalized)
 	var elevation_above_sea: float = maxf(0.0, elevation - SEA_LEVEL)
-	var max_elevation_above_sea: float = MAX_TERRAIN_HEIGHT - SEA_LEVEL
+	var max_elevation_above_sea: float = LAND_MAX - SEA_LEVEL
 	var elevation_factor: float = elevation_above_sea / max_elevation_above_sea
 
 	# Reduce temperature based on elevation
