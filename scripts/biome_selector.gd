@@ -25,7 +25,7 @@ const DIRT_LAYER_DEPTH: int = 4  # How many blocks of dirt below surface
 func select_block(temperature: float, humidity: float, elevation: int, y: int) -> Block.Type:
 	# Below sea level: water or ice
 	if y < SEA_LEVEL:
-		if y >= elevation:
+		if y > elevation:  # Above ocean floor but below sea level = water
 			return _get_water_type(temperature)
 		else:
 			return _get_subsurface_block(y, elevation)
