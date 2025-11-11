@@ -50,3 +50,11 @@ func _ready() -> void:
 	var light: DirectionalLight3D = DirectionalLight3D.new()
 	light.rotation_degrees = Vector3(-45, 45, 0)
 	add_child(light)
+
+	# Add FPS counter UI
+	var canvas_layer: CanvasLayer = CanvasLayer.new()
+	add_child(canvas_layer)
+
+	var fps_counter: Label = preload("res://scripts/fps_counter.gd").new()
+	fps_counter.set_chunk_manager(chunk_manager)
+	canvas_layer.add_child(fps_counter)
