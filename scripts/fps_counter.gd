@@ -8,8 +8,9 @@ const UPDATE_INTERVAL: float = 0.1
 var time_since_update: float = 0.0
 var frame_count: int = 0
 
-# Optional reference to chunk manager for additional stats
+# Optional references for additional stats
 var chunk_manager: ChunkManager = null
+var player: Node3D = null
 
 func _ready() -> void:
 	# Position in top-left corner with some padding
@@ -33,6 +34,14 @@ func _process(delta: float) -> void:
 		# Build stats text
 		var stats_text: String = "FPS: %.1f\nFrame Time: %.2f ms" % [fps, frame_time]
 
+		# Add player position if available
+		if player != null:
+			stats_text += "\n\nPosition: X: %.1f  Y: %.1f  Z: %.1f" % [
+				player.position.x,
+				player.position.y,
+				player.position.z
+			]
+
 		# Add chunk manager stats if available
 		if chunk_manager != null:
 			var chunks_loaded: int = chunk_manager.chunks.size()
@@ -51,3 +60,6 @@ func _process(delta: float) -> void:
 
 func set_chunk_manager(cm: ChunkManager) -> void:
 	chunk_manager = cm
+
+func set_player(p: Node3D) -> void:
+	player = p

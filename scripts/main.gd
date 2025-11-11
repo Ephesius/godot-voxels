@@ -57,4 +57,5 @@ func _ready() -> void:
 
 	var fps_counter: Label = preload("res://scripts/fps_counter.gd").new()
 	fps_counter.set_chunk_manager(chunk_manager)
+	fps_counter.set_player(player)
 	canvas_layer.add_child(fps_counter)
