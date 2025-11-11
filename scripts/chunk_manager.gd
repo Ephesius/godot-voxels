@@ -11,10 +11,10 @@ const WORLD_SIZE_Z_CHUNKS: int = 187  # 3000 blocks ÷ 16 blocks per chunk
 const WORLD_SIZE_Y_CHUNKS: int = 12   # 192 blocks ÷ 16 blocks per chunk
 
 # Dynamic chunk loading settings
-const RENDER_DISTANCE_CHUNKS: int = 4  # How many chunks to load in each direction
+const RENDER_DISTANCE_CHUNKS: int = 8  # How many chunks to load in each direction
 const UPDATE_INTERVAL: float = 0.5  # How often to check for chunk updates (seconds)
 const MAX_CHUNKS_PER_FRAME: int = 20  # Maximum chunk generation tasks to submit per frame
-const MAX_CHUNKS_TO_ADD_PER_FRAME: int = 3  # Maximum chunks to add to scene per frame
+const MAX_CHUNKS_TO_ADD_PER_FRAME: int = 10  # Maximum chunks to add to scene per frame
 const COLLISION_RADIUS: int = 1  # Only generate collision within this many chunks of player
 
 # Climate-based terrain generation
