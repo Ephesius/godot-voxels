@@ -12,18 +12,34 @@ extends RefCounted
 # World constants
 const WORLD_HALF_WIDTH: int = 1500  # Distance from center to pole (z-axis)
 const SEA_LEVEL: int = 64
-const MIN_TERRAIN_HEIGHT: int = 40
-const MAX_TERRAIN_HEIGHT: int = 150
-const TERRAIN_HEIGHT_RANGE: int = MAX_TERRAIN_HEIGHT - MIN_TERRAIN_HEIGHT
+
+# Terrain height ranges
+const OCEAN_FLOOR_MIN: int = 20
+const OCEAN_FLOOR_MAX: int = 50
+const LAND_MIN: int = 50
+const LAND_MAX: int = 150
+
+# Continental generation
+const CONTINENTAL_THRESHOLD: float = 0.35  # Values below = ocean, above = land
 
 # Temperature adjustment
 const ELEVATION_TEMP_REDUCTION: float = 0.4  # How much elevation reduces temperature
 
 # Noise generators
+var continental_noise: FastNoiseLite  # Determines land vs ocean
 var elevation_noise: FastNoiseLite
 var humidity_noise: FastNoiseLite
 
 func _init(seed_value: int = 0) -> void:
+	# Initialize continental noise (for land vs ocean determination)
+	continental_noise = FastNoiseLite.new()
+	continental_noise.seed = seed_value + 500
+	continental_noise.noise_type = FastNoiseLite.TYPE_PERLIN
+	continental_noise.frequency = 0.001  # Very low frequency = large continents
+	continental_noise.fractal_octaves = 3
+	continental_noise.fractal_lacunarity = 2.0
+	continental_noise.fractal_gain = 0.5
+
 	# Initialize elevation noise (for terrain height)
 	elevation_noise = FastNoiseLite.new()
 	elevation_noise.seed = seed_value
@@ -72,25 +88,41 @@ func _calculate_humidity(world_x: int, world_z: int) -> float:
 	return (noise_value + 1.0) / 2.0
 
 
-## Calculate elevation using Perlin noise
-## Considers base temperature to create realistic terrain
-## (e.g., flatter terrain near poles, varied terrain in temperate zones)
+## Calculate elevation using continental and elevation noise
+## First determines if area is land or ocean, then generates appropriate elevation
 func _calculate_elevation(world_x: int, world_z: int, base_temp: float) -> int:
-	var noise_value: float = elevation_noise.get_noise_2d(world_x, world_z)
+	# Sample continental noise to determine if this is land or ocean
+	var continental_value: float = continental_noise.get_noise_2d(world_x, world_z)
+	var normalized_continental: float = (continental_value + 1.0) / 2.0  # Convert to [0, 1]
 
-	# Convert noise from [-1, 1] to [0, 1]
-	var normalized_noise: float = (noise_value + 1.0) / 2.0
+	# Determine if this is ocean or land
+	var is_land: bool = normalized_continental > CONTINENTAL_THRESHOLD
+
+	# Get elevation noise value
+	var elevation_value: float = elevation_noise.get_noise_2d(world_x, world_z)
+	var normalized_elevation: float = (elevation_value + 1.0) / 2.0  # Convert to [0, 1]
 
 	# Apply temperature-based terrain variation
 	# Polar regions (low temp) have flatter terrain
 	# Temperate/tropical regions have more variation
 	var terrain_multiplier: float = 0.5 + (base_temp * 0.5)  # 0.5 to 1.0
 
-	# Calculate height in range [MIN_TERRAIN_HEIGHT, MAX_TERRAIN_HEIGHT]
-	var height_variation: float = normalized_noise * TERRAIN_HEIGHT_RANGE * terrain_multiplier
-	var final_height: int = MIN_TERRAIN_HEIGHT + int(height_variation)
+	var final_height: int
 
-	return clampi(final_height, MIN_TERRAIN_HEIGHT, MAX_TERRAIN_HEIGHT)
+	if is_land:
+		# Land terrain: ranges from LAND_MIN to LAND_MAX (50-150)
+		var land_range: int = LAND_MAX - LAND_MIN
+		var height_variation: float = normalized_elevation * land_range * terrain_multiplier
+		final_height = LAND_MIN + int(height_variation)
+		final_height = clampi(final_height, LAND_MIN, LAND_MAX)
+	else:
+		# Ocean floor: ranges from OCEAN_FLOOR_MIN to OCEAN_FLOOR_MAX (20-50)
+		var ocean_range: int = OCEAN_FLOOR_MAX - OCEAN_FLOOR_MIN
+		var depth_variation: float = normalized_elevation * ocean_range * 0.5  # Less variation in ocean floor
+		final_height = OCEAN_FLOOR_MIN + int(depth_variation)
+		final_height = clampi(final_height, OCEAN_FLOOR_MIN, OCEAN_FLOOR_MAX)
+
+	return final_height
 
 
 ## Adjust temperature based on elevation (higher altitude = cooler)
