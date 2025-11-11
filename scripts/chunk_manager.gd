@@ -246,6 +246,21 @@ func _add_chunk_to_scene(chunk_data: Dictionary) -> void:
 	var block_data: Array = chunk_data.block_data
 	var generated_mesh: ArrayMesh = chunk_data.mesh
 
+	# Validate chunk is still within render distance before adding
+	if player:
+		var player_chunk: Vector3i = world_to_chunk_pos(Vector3i(
+			int(player.position.x),
+			int(player.position.y),
+			int(player.position.z)
+		))
+
+		var dx: int = abs(chunk_pos.x - player_chunk.x)
+		var dz: int = abs(chunk_pos.z - player_chunk.z)
+
+		# Skip if beyond render distance (player moved away while chunk was generating)
+		if dx > RENDER_DISTANCE_CHUNKS or dz > RENDER_DISTANCE_CHUNKS:
+			return
+
 	# Create chunk node
 	var chunk: Chunk = Chunk.new(chunk_pos)
 

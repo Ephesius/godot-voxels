@@ -21,6 +21,7 @@ const LAND_MAX: int = 150
 
 # Continental generation
 const CONTINENTAL_THRESHOLD: float = 0.35  # Values below = ocean, above = land
+const COASTAL_BLEND_WIDTH: float = 0.1  # Width of coastal transition zone
 
 # Temperature adjustment
 const ELEVATION_TEMP_REDUCTION: float = 0.4  # How much elevation reduces temperature
@@ -90,13 +91,11 @@ func _calculate_humidity(world_x: int, world_z: int) -> float:
 
 ## Calculate elevation using continental and elevation noise
 ## First determines if area is land or ocean, then generates appropriate elevation
+## Uses coastal blending to create smooth transitions instead of cliffs
 func _calculate_elevation(world_x: int, world_z: int, base_temp: float) -> int:
 	# Sample continental noise to determine if this is land or ocean
 	var continental_value: float = continental_noise.get_noise_2d(world_x, world_z)
 	var normalized_continental: float = (continental_value + 1.0) / 2.0  # Convert to [0, 1]
-
-	# Determine if this is ocean or land
-	var is_land: bool = normalized_continental > CONTINENTAL_THRESHOLD
 
 	# Get elevation noise value
 	var elevation_value: float = elevation_noise.get_noise_2d(world_x, world_z)
@@ -107,20 +106,32 @@ func _calculate_elevation(world_x: int, world_z: int, base_temp: float) -> int:
 	# Temperate/tropical regions have more variation
 	var terrain_multiplier: float = 0.5 + (base_temp * 0.5)  # 0.5 to 1.0
 
-	var final_height: int
+	# Calculate ocean and land elevations
+	var ocean_range: int = OCEAN_FLOOR_MAX - OCEAN_FLOOR_MIN
+	var ocean_height: float = OCEAN_FLOOR_MIN + (normalized_elevation * ocean_range * 0.5)
 
-	if is_land:
-		# Land terrain: ranges from LAND_MIN to LAND_MAX (50-150)
-		var land_range: int = LAND_MAX - LAND_MIN
-		var height_variation: float = normalized_elevation * land_range * terrain_multiplier
-		final_height = LAND_MIN + int(height_variation)
+	var land_range: int = LAND_MAX - LAND_MIN
+	var land_height: float = LAND_MIN + (normalized_elevation * land_range * terrain_multiplier)
+
+	# Determine final height with coastal blending
+	var final_height: int
+	var coastal_lower: float = CONTINENTAL_THRESHOLD - COASTAL_BLEND_WIDTH
+	var coastal_upper: float = CONTINENTAL_THRESHOLD + COASTAL_BLEND_WIDTH
+
+	if normalized_continental < coastal_lower:
+		# Deep ocean
+		final_height = int(ocean_height)
+		final_height = clampi(final_height, OCEAN_FLOOR_MIN, OCEAN_FLOOR_MAX)
+	elif normalized_continental > coastal_upper:
+		# Inland
+		final_height = int(land_height)
 		final_height = clampi(final_height, LAND_MIN, LAND_MAX)
 	else:
-		# Ocean floor: ranges from OCEAN_FLOOR_MIN to OCEAN_FLOOR_MAX (20-50)
-		var ocean_range: int = OCEAN_FLOOR_MAX - OCEAN_FLOOR_MIN
-		var depth_variation: float = normalized_elevation * ocean_range * 0.5  # Less variation in ocean floor
-		final_height = OCEAN_FLOOR_MIN + int(depth_variation)
-		final_height = clampi(final_height, OCEAN_FLOOR_MIN, OCEAN_FLOOR_MAX)
+		# Coastal transition zone - blend smoothly from ocean to land
+		var blend_factor: float = (normalized_continental - coastal_lower) / (coastal_upper - coastal_lower)
+		var blended_height: float = lerpf(ocean_height, land_height, blend_factor)
+		final_height = int(blended_height)
+		final_height = clampi(final_height, OCEAN_FLOOR_MIN, LAND_MAX)
 
 	return final_height
 
