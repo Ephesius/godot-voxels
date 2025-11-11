@@ -194,7 +194,8 @@ func _generate_chunk_on_thread(chunk_pos: Vector3i) -> void:
 			for z: int in range(Chunk.CHUNK_SIZE):
 				var block_type: Block.Type = block_data[x][y][z]
 
-				if not Block.is_solid(block_type):
+				# Skip air blocks (but render water, ice, and all solid blocks)
+				if block_type == Block.Type.AIR:
 					continue
 
 				var color: Color = Block.get_color(block_type)
@@ -256,9 +257,11 @@ func _add_chunk_to_scene(chunk_data: Dictionary) -> void:
 
 		var dx: int = abs(chunk_pos.x - player_chunk.x)
 		var dz: int = abs(chunk_pos.z - player_chunk.z)
+		var dy: int = abs(chunk_pos.y - player_chunk.y)
 
 		# Skip if beyond render distance (player moved away while chunk was generating)
-		if dx > RENDER_DISTANCE_CHUNKS or dz > RENDER_DISTANCE_CHUNKS:
+		# Allow more vertical distance since player might be flying
+		if dx > RENDER_DISTANCE_CHUNKS or dz > RENDER_DISTANCE_CHUNKS or dy > RENDER_DISTANCE_CHUNKS + 3:
 			return
 
 	# Create chunk node
@@ -284,6 +287,8 @@ func _add_chunk_to_scene(chunk_data: Dictionary) -> void:
 	if generated_mesh and generated_mesh.get_surface_count() > 0:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.vertex_color_use_as_albedo = true
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.cull_mode = BaseMaterial3D.CULL_BACK
 		chunk.set_surface_override_material(0, material)
 
 	# Add to scene and dictionary
