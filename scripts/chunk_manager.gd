@@ -410,32 +410,23 @@ func _load_chunks_around_player(player_chunk: Vector3i) -> void:
 
 
 ## Unload chunks that are too far from the player
+## NOTE: Currently uses simple distance-based unloading
+## TODO: Re-implement smart Y-level culling to avoid "void" when looking down hills
 func _unload_distant_chunks(player_chunk: Vector3i) -> void:
 	# Create a list of chunks to unload (can't modify dictionary while iterating)
 	var chunks_to_unload: Array[Vector3i] = []
 
+	# Use larger unload distance than render distance to avoid thrashing
+	var unload_distance: int = RENDER_DISTANCE_CHUNKS + 2
+
 	# Check each loaded chunk
 	for chunk_pos: Vector3i in chunks.keys():
-		# Calculate horizontal distance
 		var dx: int = abs(chunk_pos.x - player_chunk.x)
+		var dy: int = abs(chunk_pos.y - player_chunk.y)
 		var dz: int = abs(chunk_pos.z - player_chunk.z)
 
-		# Unload if beyond render distance (with buffer to avoid thrashing)
-		var unload_distance: int = RENDER_DISTANCE_CHUNKS + 2
-		if dx > unload_distance or dz > unload_distance:
-			chunks_to_unload.append(chunk_pos)
-			continue
-
-		# Also unload chunks that are far below terrain or far above player
-		var world_x: int = chunk_pos.x * Chunk.CHUNK_SIZE
-		var world_z: int = chunk_pos.z * Chunk.CHUNK_SIZE
-		var climate: Dictionary = climate_calculator.get_climate_at(world_x, world_z)
-		var terrain_elevation: int = climate.elevation
-		var terrain_y_chunk: int = floori(float(terrain_elevation) / Chunk.CHUNK_SIZE)
-		var min_y_chunk: int = max(0, terrain_y_chunk - 2)
-
-		# Unload if chunk is well below terrain or too far above player
-		if chunk_pos.y < min_y_chunk or chunk_pos.y > player_chunk.y + 3:
+		# Unload if beyond distance in any axis
+		if dx > unload_distance or dz > unload_distance or dy > unload_distance:
 			chunks_to_unload.append(chunk_pos)
 
 	# Unload the distant chunks
