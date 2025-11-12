@@ -17,6 +17,9 @@ const MAX_CHUNKS_PER_FRAME: int = 20  # Maximum chunk generation tasks to submit
 const MAX_CHUNKS_TO_ADD_PER_FRAME: int = 10  # Maximum chunks to add to scene per frame
 const COLLISION_RADIUS: int = 1  # Only generate collision within this many chunks of player
 
+# Debug flag - set to true to enable chunk lifecycle logging
+const DEBUG_CHUNKS: bool = true
+
 # Climate-based terrain generation
 var climate_calculator: ClimateCalculator
 var biome_selector: BiomeSelector
@@ -262,7 +265,13 @@ func _add_chunk_to_scene(chunk_data: Dictionary) -> void:
 		# Skip if beyond render distance (player moved away while chunk was generating)
 		# Allow more vertical distance since player might be flying
 		if dx > RENDER_DISTANCE_CHUNKS or dz > RENDER_DISTANCE_CHUNKS or dy > RENDER_DISTANCE_CHUNKS + 3:
+			if DEBUG_CHUNKS:
+				print("[CHUNK] REJECTED add %s - player at %s (dx:%d dy:%d dz:%d)" % [chunk_pos, player_chunk, dx, dy, dz])
 			return
+
+	if DEBUG_CHUNKS:
+		var player_chunk_now: Vector3i = world_to_chunk_pos(Vector3i(int(player.position.x), int(player.position.y), int(player.position.z))) if player else Vector3i.ZERO
+		print("[CHUNK] ADDING %s - player at %s" % [chunk_pos, player_chunk_now])
 
 	# Create chunk node
 	var chunk: Chunk = Chunk.new(chunk_pos)
@@ -413,6 +422,9 @@ func _load_chunks_around_player(player_chunk: Vector3i) -> void:
 ## NOTE: Currently uses simple distance-based unloading
 ## TODO: Re-implement smart Y-level culling to avoid "void" when looking down hills
 func _unload_distant_chunks(player_chunk: Vector3i) -> void:
+	if DEBUG_CHUNKS:
+		print("[UNLOAD] Checking unload - player at %s, %d chunks loaded" % [player_chunk, chunks.size()])
+
 	# Create a list of chunks to unload (can't modify dictionary while iterating)
 	var chunks_to_unload: Array[Vector3i] = []
 
@@ -428,8 +440,13 @@ func _unload_distant_chunks(player_chunk: Vector3i) -> void:
 		# Unload if beyond distance in any axis
 		if dx > unload_distance or dz > unload_distance or dy > unload_distance:
 			chunks_to_unload.append(chunk_pos)
+			if DEBUG_CHUNKS:
+				print("[UNLOAD] Marking for unload: %s (dx:%d dy:%d dz:%d > %d)" % [chunk_pos, dx, dy, dz, unload_distance])
 
 	# Unload the distant chunks
+	if DEBUG_CHUNKS and chunks_to_unload.size() > 0:
+		print("[UNLOAD] Unloading %d chunks" % chunks_to_unload.size())
+
 	for chunk_pos: Vector3i in chunks_to_unload:
 		unload_chunk(chunk_pos)
 
@@ -474,6 +491,10 @@ func unload_chunk(chunk_pos: Vector3i) -> void:
 		var chunk: Chunk = chunks[chunk_pos]
 		chunks.erase(chunk_pos)
 		chunk.queue_free()
+		if DEBUG_CHUNKS:
+			print("[UNLOAD] REMOVED chunk %s - %d chunks remaining" % [chunk_pos, chunks.size()])
+	elif DEBUG_CHUNKS:
+		print("[UNLOAD] WARNING: Tried to unload non-existent chunk %s" % chunk_pos)
 
 # Clear all chunks (useful for regenerating the world)
 func clear_all_chunks() -> void:
