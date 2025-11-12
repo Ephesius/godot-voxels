@@ -287,8 +287,6 @@ func _add_chunk_to_scene(chunk_data: Dictionary) -> void:
 	if generated_mesh and generated_mesh.get_surface_count() > 0:
 		var material: StandardMaterial3D = StandardMaterial3D.new()
 		material.vertex_color_use_as_albedo = true
-		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		material.cull_mode = BaseMaterial3D.CULL_BACK
 		chunk.set_surface_override_material(0, material)
 
 	# Add to scene and dictionary
